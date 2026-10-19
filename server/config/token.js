@@ -7,7 +7,6 @@ return token
     } catch (error) {
         console.log(error)
     }
-
 }
 
 export default genToken

@@ -7,4 +7,3 @@ authRouter.post("/google",googleAuth)
 authRouter.get("/logout",logOut)
 
 export default authRouter
-
