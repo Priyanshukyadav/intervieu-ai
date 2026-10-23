@@ -7,6 +7,12 @@ function Auth() {
     const handleGoogleSignIn = async () => {
         try{
             const response = await signInWithPopup(auth, provider);
+            let user = response.user;
+            let name = user.displayName;
+            let email = user.email
+            const result = await axois.post(ServerUrl+"/api/auth/google",
+            {name,email},{withCredentials:true})
+
             console.log(response);
 
         }catch(error){
