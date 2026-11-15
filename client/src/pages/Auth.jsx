@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BsRobot } from "react-icons/bs";
 import { IoSparkles } from "react-icons/io5";
 import { motion } from "motion/react"
@@ -11,8 +11,10 @@ import { useDispatch } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
 function Auth({isModel = false}) {
     const dispatch = useDispatch()
+    const [authError, setAuthError] = useState("")
 
     const handleGoogleAuth = async () => {
+        setAuthError("")
         try {
             const response = await signInWithPopup(auth,provider)
             let User = response.user
@@ -25,7 +27,8 @@ function Auth({isModel = false}) {
 
             
         } catch (error) {
-            console.log(error)
+            console.error("Google sign-in failed:", error)
+            setAuthError(error.response?.data?.message || error.message || "Google sign-in failed. Please try again.")
               dispatch(setUserData(null))
         }
     }
@@ -76,6 +79,7 @@ function Auth({isModel = false}) {
 
    
             </motion.button>
+            {authError && <p role="alert" className="mt-4 text-center text-sm text-red-600">{authError}</p>}
         </motion.div>
 
       

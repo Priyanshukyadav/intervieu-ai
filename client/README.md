@@ -14,3 +14,14 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Firebase Google sign-in
+
+Google sign-in requires a valid Web API key for the Firebase project configured in
+`src/utils/firebase.js`. Replace the placeholder value for `VITE_FIREBASE_APIKEY`
+in `.env` with the Web API key shown in Firebase Console under
+**Project settings > General > Your apps**. Do not include quotes around the value.
+
+After changing `.env`, restart the Vite development server. Also make sure
+**Google** is enabled under **Authentication > Sign-in method** and that the
+site's host is listed under **Authentication > Settings > Authorized domains**.
