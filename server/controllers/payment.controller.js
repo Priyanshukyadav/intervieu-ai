@@ -126,6 +126,8 @@ export const verifyPayment = async (req,res) => {
         success: true,
         message: "Payment verified and credits added.",
         user: updatedUser,
+        creditsAdded: payment.credits,
+        amount: payment.amount,
       });
     } catch (error) {
       console.error("Stripe payment verification failed:", error);

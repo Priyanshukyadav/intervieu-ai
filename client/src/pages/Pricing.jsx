@@ -12,6 +12,7 @@ function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState(null);
   const dispatch = useDispatch()
 
   const checkoutSessionId = searchParams.get("session_id");
@@ -19,6 +20,7 @@ function Pricing() {
 
   useEffect(() => {
     if (checkoutCancelled) {
+      setPaymentSuccess(null);
       setPaymentMessage("Checkout cancelled. No payment was made.");
       navigate("/pricing", { replace: true });
       return;
@@ -39,7 +41,11 @@ function Pricing() {
           { withCredentials: true }
         );
         dispatch(setUserData(result.data.user));
-        navigate("/");
+        setPaymentMessage("");
+        setPaymentSuccess({
+          creditsAdded: result.data.creditsAdded,
+          amount: result.data.amount,
+        });
       } catch (error) {
         console.error("Stripe payment verification failed:", error);
         setPaymentMessage(
@@ -102,6 +108,7 @@ function Pricing() {
   const handlePayment = async (plan) => {
     try {
       setPaymentMessage("");
+      setPaymentSuccess(null);
       setLoadingPlan(plan.id)
 
       const result = await axios.post(ServerUrl + "/api/payment/order" , {
@@ -143,6 +150,11 @@ function Pricing() {
           {paymentMessage && (
             <p role="alert" className="mt-4 text-sm text-red-600">
               {paymentMessage}
+            </p>
+          )}
+          {loadingPlan === "verification" && (
+            <p role="status" className="mt-4 text-sm text-gray-600">
+              Payment returned. Confirming it with Stripe...
             </p>
           )}
         </div>
@@ -240,6 +252,34 @@ function Pricing() {
           )
         })}
       </div>
+
+      {paymentSuccess && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payment-success-title"
+        >
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
+            <FaCheckCircle className="mx-auto text-emerald-500" size={56} />
+            <h2 id="payment-success-title" className="mt-4 text-2xl font-semibold text-gray-900">
+              Payment successful!
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Your payment of ₹{paymentSuccess.amount} is confirmed.
+            </p>
+            <p className="mt-1 text-gray-600">
+              {paymentSuccess.creditsAdded} credits have been added to your account.
+            </p>
+            <button
+              onClick={() => navigate("/")}
+              className="mt-6 w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700"
+            >
+              Continue to app
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   )
