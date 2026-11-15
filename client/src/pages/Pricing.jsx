@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from "motion/react";
 import axios from 'axios';
 import { ServerUrl } from '../App';
@@ -8,9 +8,50 @@ import { useDispatch } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
 function Pricing() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [loadingPlan, setLoadingPlan] = useState(null);
+  const [paymentMessage, setPaymentMessage] = useState("");
   const dispatch = useDispatch()
+
+  const checkoutSessionId = searchParams.get("session_id");
+  const checkoutCancelled = searchParams.get("payment") === "cancelled";
+
+  useEffect(() => {
+    if (checkoutCancelled) {
+      setPaymentMessage("Checkout cancelled. No payment was made.");
+      navigate("/pricing", { replace: true });
+      return;
+    }
+
+    if (!checkoutSessionId) {
+      return;
+    }
+
+    navigate("/pricing", { replace: true });
+    setLoadingPlan("verification");
+
+    const verifyCheckout = async () => {
+      try {
+        const result = await axios.post(
+          ServerUrl + "/api/payment/verify",
+          { sessionId: checkoutSessionId },
+          { withCredentials: true }
+        );
+        dispatch(setUserData(result.data.user));
+        navigate("/");
+      } catch (error) {
+        console.error("Stripe payment verification failed:", error);
+        setPaymentMessage(
+          error.response?.data?.message || "Payment verification failed. Please contact support if you were charged."
+        );
+      } finally {
+        setLoadingPlan(null);
+      }
+    };
+
+    verifyCheckout();
+  }, [checkoutCancelled, checkoutSessionId, dispatch, navigate]);
 
   const plans = [
     {
@@ -60,48 +101,24 @@ function Pricing() {
 
   const handlePayment = async (plan) => {
     try {
+      setPaymentMessage("");
       setLoadingPlan(plan.id)
-
-      const amount =  
-      plan.id === "basic" ? 100 :
-      plan.id === "pro" ? 500 : 0;
 
       const result = await axios.post(ServerUrl + "/api/payment/order" , {
         planId: plan.id,
-        amount: amount,
-        credits: plan.credits,
       },{withCredentials:true})
-      
 
-      const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: result.data.amount,
-      currency: "INR",
-      name: "InterviewIQ.AI",
-      description: `${plan.name} - ${plan.credits} Credits`,
-      order_id: result.data.id,
-
-      handler:async function (response) {
-        const verifypay = await axios.post(ServerUrl + "/api/payment/verify" ,response , {withCredentials:true})
-        dispatch(setUserData(verifypay.data.user))
-
-          alert("Payment Successful 🎉 Credits Added!");
-          navigate("/")
-
-      },
-      theme:{
-        color: "#10b981",
-      },
-
+      if (!result.data.url) {
+        throw new Error("Stripe did not return a Checkout URL.");
       }
 
-      const rzp = new window.Razorpay(options)
-      rzp.open()
-
-      setLoadingPlan(null);
+      window.location.assign(result.data.url);
     } catch (error) {
-     console.log(error)
-     setLoadingPlan(null);
+      console.error("Unable to start Stripe Checkout:", error);
+      setPaymentMessage(
+        error.response?.data?.message || error.message || "Unable to start checkout. Please try again."
+      );
+      setLoadingPlan(null);
     }
   }
 
@@ -123,6 +140,11 @@ function Pricing() {
           <p className="text-gray-500 mt-3 text-lg">
             Flexible pricing to match your interview preparation goals.
           </p>
+          {paymentMessage && (
+            <p role="alert" className="mt-4 text-sm text-red-600">
+              {paymentMessage}
+            </p>
+          )}
         </div>
       </div>
 

@@ -25,3 +25,11 @@ in `.env` with the Web API key shown in Firebase Console under
 After changing `.env`, restart the Vite development server. Also make sure
 **Google** is enabled under **Authentication > Sign-in method** and that the
 site's host is listed under **Authentication > Settings > Authorized domains**.
+
+## Stripe test payments
+
+The client uses Stripe Checkout Sessions created by the server. Add your Stripe
+test secret key to `server/.env` as `STRIPE_SECRET_KEY=sk_test_...`. Set
+`CLIENT_URL=http://localhost:5173` there if the client uses a different local
+address. Keep the Stripe secret key on the server; no Stripe key is needed in
+the client `.env`. Restart the server after changing its environment.

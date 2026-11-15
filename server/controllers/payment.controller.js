@@ -1,87 +1,134 @@
+import mongoose from "mongoose";
 import Payment from "../models/payment.model.js";
 import User from "../models/user.model.js";
-import razorpay from "../services/razorpay.service.js";
-import crypto from "crypto"
+import stripe from "../services/stripe.service.js";
+
+const plans = {
+  basic: { name: "Starter Pack", amount: 100, credits: 150 },
+  pro: { name: "Pro Pack", amount: 500, credits: 650 },
+};
+
+const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
 
 export const createOrder = async (req,res) => {
     try {
-        const {planId, amount, credits} = req.body;
-          if (!amount || !credits) {
-      return res.status(400).json({ message: "Invalid plan data" });
-    }
+      const { planId } = req.body || {};
+      const plan = Object.prototype.hasOwnProperty.call(plans, planId) ? plans[planId] : null;
+      if (!plan) {
+        return res.status(400).json({ message: "Invalid plan." });
+      }
 
-     const options = {
-      amount: amount * 100, // convert to paise
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`,
-    };
+      const checkoutSession = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "inr",
+              product_data: {
+                name: plan.name,
+                description: `${plan.credits} InterviewIQ AI credits`,
+              },
+              unit_amount: plan.amount * 100,
+            },
+            quantity: 1,
+          },
+        ],
+        success_url: `${clientUrl}/pricing?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${clientUrl}/pricing?payment=cancelled`,
+        metadata: {
+          userId: String(req.userId),
+          planId,
+        },
+      });
 
-    const order = await razorpay.orders.create(options)
+      await Payment.create({
+        userId: req.userId,
+        planId,
+        amount: plan.amount,
+        credits: plan.credits,
+        stripeCheckoutSessionId: checkoutSession.id,
+        status: "created",
+      });
 
-     await Payment.create({
-      userId: req.userId,
-      planId,
-      amount,
-      credits,
-      razorpayOrderId: order.id,
-      status: "created",
-    });
-
-    return res.json(order);
-
-    
+      return res.json({ id: checkoutSession.id, url: checkoutSession.url });
     } catch (error) {
-         return res.status(500).json({message:`failed to create Razorpay order ${error}`})
+      console.error("Stripe Checkout session creation failed:", error);
+      return res.status(500).json({ message: "Unable to create Stripe Checkout session." });
     }
 }
 
 
 export const verifyPayment = async (req,res) => {
     try {
-        const {razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature} = req.body
+      const { sessionId } = req.body || {};
+      if (typeof sessionId !== "string" || !sessionId) {
+        return res.status(400).json({ message: "Missing Stripe Checkout session ID." });
+      }
 
-      const body = razorpay_order_id + "|" + razorpay_payment_id;
+      const payment = await Payment.findOne({
+        stripeCheckoutSessionId: sessionId,
+        userId: req.userId,
+      });
 
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
-      .digest("hex");
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found." });
+      }
 
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: "Invalid payment signature" });
-    }
+      const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
+      if (
+        checkoutSession.metadata?.userId !== String(req.userId) ||
+        checkoutSession.payment_status !== "paid" ||
+        checkoutSession.currency !== "inr" ||
+        checkoutSession.amount_total !== payment.amount * 100
+      ) {
+        return res.status(400).json({ message: "Stripe payment is not complete or does not match this order." });
+      }
 
-     const payment = await Payment.findOne({
-      razorpayOrderId: razorpay_order_id,
-    });
+      const stripePaymentIntentId =
+        typeof checkoutSession.payment_intent === "string"
+          ? checkoutSession.payment_intent
+          : checkoutSession.payment_intent?.id;
+      const dbSession = await mongoose.startSession();
+      let updatedUser;
 
-    if (!payment) {
-      return res.status(404).json({ message: "Payment not found" });
-    }
+      try {
+        await dbSession.withTransaction(async () => {
+          const paidPayment = await Payment.findOneAndUpdate(
+            { _id: payment._id, status: "created" },
+            {
+              $set: {
+                status: "paid",
+                stripePaymentIntentId,
+              },
+            },
+            { new: true, session: dbSession }
+          );
 
-    if (payment.status === "paid") {
-      return res.json({ message: "Already processed" });
-    }
+          if (paidPayment) {
+            updatedUser = await User.findByIdAndUpdate(
+              payment.userId,
+              { $inc: { credits: payment.credits } },
+              { new: true, session: dbSession }
+            );
+          } else {
+            updatedUser = await User.findById(payment.userId).session(dbSession);
+          }
 
-    // Update payment record
-    payment.status = "paid";
-    payment.razorpayPaymentId = razorpay_payment_id;
-    await payment.save();
+          if (!updatedUser) {
+            throw new Error("User for paid Stripe order was not found.");
+          }
+        });
+      } finally {
+        await dbSession.endSession();
+      }
 
-    // Add credits to user
-    const updatedUser = await User.findByIdAndUpdate(payment.userId, {
-      $inc: { credits: payment.credits }
-    },{new:true});
-
-    res.json({
-      success: true,
-      message: "Payment verified and credits added",
-      user: updatedUser,
-    });
-
+      return res.json({
+        success: true,
+        message: "Payment verified and credits added.",
+        user: updatedUser,
+      });
     } catch (error) {
-         return res.status(500).json({message:`failed to verify Razorpay payment ${error}`})
+      console.error("Stripe payment verification failed:", error);
+      return res.status(500).json({ message: "Unable to verify Stripe payment." });
     }
 }
