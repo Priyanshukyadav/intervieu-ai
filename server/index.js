@@ -26,3 +26,4 @@ app.listen(process.env.PORT || 6000, () => {
     console.log("server running");
     connectDB() 
 })
+
