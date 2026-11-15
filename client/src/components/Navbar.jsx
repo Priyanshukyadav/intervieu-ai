@@ -46,6 +46,17 @@ function Navbar() {
             </div>
 
             <div className='flex items-center gap-6  relative'>
+                <button
+                    onClick={() => {
+                        setShowCreditPopup(false);
+                        setShowUserPopup(false);
+                        navigate("/upcoming");
+                    }}
+                    className='rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition whitespace-nowrap'
+                >
+                    Upcoming
+                </button>
+
                 <div className='relative'>
                     <button onClick={()=>{
                         if(!userData){
