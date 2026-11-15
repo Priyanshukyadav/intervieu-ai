@@ -55,6 +55,11 @@ function Step1SetUp({ onStart }) {
     }
 
     const handleStart = async () => {
+        if (mode === "DSA") {
+            onStart({ mode, role, experience });
+            return;
+        }
+
         setLoading(true)
         try {
            const result = await axios.post(ServerUrl + "/api/interview/generate-questions" , {role, experience, mode , resumeText, projects, skills } , {withCredentials:true}) 
@@ -170,6 +175,7 @@ function Step1SetUp({ onStart }) {
 
                             <option value="Technical">Technical Interview</option>
                             <option value="HR">HR Interview</option>
+                            <option value="DSA">DSA Coding Round</option>
 
                         </select>
 
@@ -251,7 +257,7 @@ function Step1SetUp({ onStart }) {
 
                         <motion.button
                         onClick={handleStart}
-                            disabled={!role || !experience || loading}
+                            disabled={(mode !== "DSA" && (!role || !experience)) || loading}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
                             className='w-full disabled:bg-gray-600 bg-green-600 hover:bg-green-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md'>
