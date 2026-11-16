@@ -384,12 +384,12 @@ setIsSubmitting(false)
 
 
   return (
-    <div className='min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6'>
+    <div className='min-h-[calc(100vh-2rem)] bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-2 sm:p-3'>
       <div className='w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden'>
 
         {/* video section */}
-        <div className='w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200'>
-          <div className='w-full max-w-md rounded-2xl overflow-hidden shadow-xl'>
+        <div className='w-full lg:w-1/4 lg:shrink-0 bg-white flex flex-col items-center p-4 space-y-4 border-r border-gray-200'>
+          <div className='w-full rounded-2xl overflow-hidden shadow-xl'>
             <video
               src={videoSource}
               key={videoSource}
@@ -397,20 +397,20 @@ setIsSubmitting(false)
               muted
               playsInline
               preload="auto"
-              className="w-full h-auto object-cover"
+              className="aspect-video w-full object-cover"
             />
           </div>
 
           {/* subtitle */}
           {subtitle && (
-            <div className='w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm'>
+            <div className='w-full bg-gray-50 border border-gray-200 rounded-xl p-3 shadow-sm'>
               <p className='text-gray-700 text-sm sm:text-base font-medium text-center leading-relaxed'>{subtitle}</p>
             </div>
           )}
 
 
           {/* timer Area */}
-          <div className='w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-5'>
+          <div className='w-full bg-white border border-gray-200 rounded-2xl shadow-md p-4 space-y-4'>
             <div className='flex justify-between items-center'>
               <span className='text-sm text-gray-500'>
                 Interview Status
@@ -447,7 +447,7 @@ setIsSubmitting(false)
 
         {/* Text section */}
 
-        <div className='flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative'>
+        <div className='min-w-0 flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative'>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className='text-xl sm:text-2xl font-bold text-emerald-600'>
               AI Smart Interview

@@ -14,10 +14,6 @@ function InterviewPage() {
 
   return (
     <div className='min-h-screen bg-gray-50'>
-        {step >= 2 && interviewData?.mode !== 'DSA' && (
-            <CandidateVideoRecorder isInterviewFinished={step === 3} />
-        )}
-
         {step===1 && (
             <Step1SetUp onStart={(data)=>{
                 setInterviewData(data);
@@ -30,20 +26,33 @@ function InterviewPage() {
             </Suspense>
          )}
 
-         {step === 2 && interviewData?.mode !== "DSA" && (
-            <Step2Interview interviewData={interviewData}
-            onExit={() => {
-                setInterviewData(null)
-                setStep(1)
-            }}
-            onFinish={(report)=>{setInterviewData(report);
-                setStep(3)
-            }}
-            />
+         {step >= 2 && interviewData?.mode !== "DSA" && (
+            <div className={step === 2
+                ? "grid min-h-screen grid-cols-1 gap-4 p-4 xl:grid-cols-[minmax(0,4fr)_minmax(240px,1fr)]"
+                : ""}>
+                {step === 2 ? (
+                    <Step2Interview interviewData={interviewData}
+                        onExit={() => {
+                            setInterviewData(null)
+                            setStep(1)
+                        }}
+                        onFinish={(report) => {
+                            setInterviewData(report)
+                            setStep(3)
+                        }}
+                    />
+                ) : (
+                    <Step3Report report={interviewData} />
+                )}
+                <CandidateVideoRecorder
+                    embedded={step === 2}
+                    isInterviewFinished={step === 3}
+                />
+            </div>
         )}
 
-          {step===3 && (
-            <Step3Report report={interviewData}/>
+        {step === 3 && interviewData?.mode === "DSA" && (
+            <Step3Report report={interviewData} />
         )}
 
       

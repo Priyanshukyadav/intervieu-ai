@@ -46,7 +46,7 @@ These features are planned and are not available in the platform yet:
 
 ## Requirements
 
-- Node.js 20 or newer.
+- Node.js 22.13 or newer.
 - npm.
 - A MongoDB database.
 - Firebase project with Google Authentication enabled.
@@ -64,6 +64,7 @@ Do not commit `.env` files or share server secrets.
 Create `client/.env` from `client/.env.example`:
 
 ```env
+VITE_API_URL=http://localhost:8000
 VITE_FIREBASE_APIKEY=your_firebase_web_api_key
 ```
 
@@ -86,9 +87,45 @@ CLIENT_URL=http://localhost:5173
 JUDGE0_API_KEY=replace_with_rapidapi_key
 ```
 
-The client currently calls the API at `http://localhost:8000`, so keep the
-server port at `8000` for local development unless you also update
-`client/src/App.jsx`.
+`CLIENT_URL` may contain a comma-separated list of allowed client origins. The
+client calls `VITE_API_URL`; set it to the API's base URL without a trailing
+slash. Render supplies `PORT` automatically in production.
+
+## Deploy
+
+### Render API
+
+1. Create a Render Blueprint from this repository using the root
+   [`render.yaml`](../render.yaml). It creates the web service with `server/`
+   as its root directory, `npm ci` as its build command, and `npm start` as its
+   start command.
+2. Set the prompted secret/environment values in Render:
+   `MONGODB_URL`, `JWT_SECRET_KEY`, `OPENROUTER_API_KEY`,
+   `STRIPE_SECRET_KEY`, `JUDGE0_API_KEY`, and `CLIENT_URL`.
+   Set `CLIENT_URL` to the Vercel site's exact origin, such as
+   `https://your-app.vercel.app` (no path or trailing slash). Include any
+   additional Vercel preview origins as comma-separated values if those
+   previews need API access.
+3. Wait for `/api/health` to pass. The server connects to MongoDB before it
+   starts listening, so a missing or invalid database URL fails the deployment
+   instead of leaving an apparently healthy but unusable service.
+
+### Vercel client
+
+1. Import the repository in Vercel and set the project **Root Directory** to
+   `client`. The included [`vercel.json`](./vercel.json) configures the Vite
+   build output and SPA route fallback.
+2. Add these Vercel environment variables for Production (and Preview if used):
+   - `VITE_API_URL`: the Render service origin, such as
+     `https://your-api.onrender.com` (no trailing slash).
+   - `VITE_FIREBASE_APIKEY`: the Firebase Web API key.
+3. Deploy, then add the Vercel domain to Firebase Authentication's authorized
+   domains. Configure Render's `CLIENT_URL` with that same origin.
+
+The API uses credentialed CORS and secure cross-site cookies in production.
+For more reliable browser cookie behavior, use custom domains for both
+services under the same registrable domain (for example, `app.example.com`
+and `api.example.com`).
 
 Candidate video recording uses the browser's camera and microphone APIs. It
 does not upload videos or require a recording API key. Recordings remain in

@@ -24,7 +24,7 @@ function getRecordingError(error) {
   return 'Could not start recording. Check your camera and microphone, then try again.'
 }
 
-function CandidateVideoRecorder({ isInterviewFinished }) {
+function CandidateVideoRecorder({ isInterviewFinished, embedded = false }) {
   const [consentGiven, setConsentGiven] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -199,33 +199,35 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
   return (
     <section
       ref={panelRef}
-      className={`fixed z-50 max-h-[85vh] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-2xl transition-[width] sm:p-4 ${
-        position ? '' : 'bottom-4 right-4'
-      } ${isDragging ? 'cursor-grabbing' : ''} ${
-        isExpanded ? '' : 'w-48 sm:w-52'
-      }`}
+      className={`${embedded
+        ? 'relative w-full self-start rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:p-4'
+        : `fixed z-50 max-h-[85vh] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-2xl transition-[width] sm:p-4 ${
+          position ? '' : 'bottom-4 right-4'
+        } ${isDragging ? 'cursor-grabbing' : ''} ${
+          isExpanded ? '' : 'w-48 sm:w-52'
+        }`}`}
       style={{
-        ...(position
+        ...(!embedded && position
           ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' }
           : {}),
-        ...(isExpanded ? { width: 'min(92vw, 560px)' } : {}),
+        ...(!embedded && isExpanded ? { width: 'min(92vw, 560px)' } : {}),
       }}
     >
       <div
-        onPointerDown={handleDragStart}
-        onPointerMove={handleDragMove}
-        onPointerUp={handleDragEnd}
-        onPointerCancel={handleDragEnd}
-        className={`flex touch-none select-none items-center justify-between gap-2 ${
-          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        onPointerDown={embedded ? undefined : handleDragStart}
+        onPointerMove={embedded ? undefined : handleDragMove}
+        onPointerUp={embedded ? undefined : handleDragEnd}
+        onPointerCancel={embedded ? undefined : handleDragEnd}
+        className={`flex select-none items-center justify-between gap-2 ${
+          embedded ? '' : `touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`
         }`}
-        title="Hold and drag to move the video"
+        title={embedded ? undefined : 'Hold and drag to move the video'}
       >
         <div className="flex min-w-0 items-center gap-2 text-slate-900">
-          <FaArrowsAlt className="shrink-0 text-slate-400" size={12} />
+          {!embedded && <FaArrowsAlt className="shrink-0 text-slate-400" size={12} />}
           <FaVideo className="shrink-0 text-emerald-600" />
           <h2 className="truncate text-sm font-semibold">
-            {isExpanded ? 'Your interview recording' : 'Your video'}
+            {embedded || isExpanded ? 'Your interview recording' : 'Your video'}
           </h2>
           {isRecording && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700">
@@ -234,7 +236,7 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
             </span>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        {!embedded && <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={() => setIsExpanded((current) => !current)}
@@ -244,17 +246,17 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
           >
             {isExpanded ? <FaCompress size={13} /> : <FaExpand size={13} />}
           </button>
-        </div>
+        </div>}
       </div>
 
-      {isExpanded && (
+      {(isExpanded || embedded) && (
         <p className="mt-1 text-xs text-slate-600">
           Camera video and microphone audio, including your spoken answers, are
           recorded together. Nothing is uploaded.
         </p>
       )}
 
-      <div className={`mt-3 grid gap-3 ${isExpanded ? 'md:grid-cols-[minmax(0,1.2fr)_minmax(190px,0.8fr)]' : ''}`}>
+      <div className={`mt-3 grid gap-3 ${isExpanded && !embedded ? 'md:grid-cols-[minmax(0,1.2fr)_minmax(190px,0.8fr)]' : ''}`}>
         {(mediaStream || recordingUrl) && (
           <div className="overflow-hidden rounded-lg bg-slate-950">
             <video
@@ -268,9 +270,15 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
             />
           </div>
         )}
+        {embedded && !mediaStream && !recordingUrl && (
+          <div className="flex aspect-video flex-col items-center justify-center gap-2 rounded-lg bg-slate-950 p-4 text-center text-slate-300">
+            <FaVideo size={24} />
+            <p className="text-xs">Camera preview appears here when you start recording.</p>
+          </div>
+        )}
 
         <div className="flex min-w-0 flex-col justify-center">
-          {!recordingBlob && !isInterviewFinished && isExpanded && (
+          {!recordingBlob && !isInterviewFinished && (isExpanded || embedded) && (
             <>
               <label className="flex cursor-pointer items-start gap-2 text-xs leading-4 text-slate-700">
                 <input
@@ -310,7 +318,7 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
             </>
           )}
 
-          {!recordingBlob && !isInterviewFinished && !isExpanded && !isRecording && (
+          {!embedded && !recordingBlob && !isInterviewFinished && !isExpanded && !isRecording && (
             <button
               type="button"
               onClick={() => setIsExpanded(true)}
@@ -320,7 +328,7 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
             </button>
           )}
 
-          {isRecording && !isExpanded && (
+          {isRecording && !embedded && !isExpanded && (
             <button
               type="button"
               onClick={stopRecording}
@@ -365,7 +373,7 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
         </div>
       </div>
 
-      {isExpanded && (
+      {(isExpanded || embedded) && (
         <p className="mt-3 text-xs leading-5 text-slate-500">
           Recording is kept only in this browser session. Download it before
           leaving or refreshing the page. Camera and microphone access requires
