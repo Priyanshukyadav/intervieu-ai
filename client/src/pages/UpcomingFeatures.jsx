@@ -143,8 +143,7 @@ function UpcomingFeatures() {
                 learning, and adaptive preparation for your next opportunity.
               </p>
               <p className="mt-7 text-sm text-gray-400">
-                These platform features are planned but not available yet. No
-                launch dates have been announced.
+                Exciting upgrades are on the way! Our team is putting the finishing touches on these features and they’ll be available soon.
               </p>
             </div>
           </section>
