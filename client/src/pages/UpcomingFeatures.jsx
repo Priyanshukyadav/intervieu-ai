@@ -28,10 +28,10 @@ const coreFeatures = [
   {
     icon: <FaVideo size={22} />,
     label: "FREE COMMUNITY",
-    title: "Practice with a friend",
+    title: "Peer-to-Peer Mock Arena with AI Referee",
     description:
-      "Meet another candidate for a realistic, peer-to-peer mock interview over video. This practice space is planned to be 100% free.",
-    detail: "Camera and microphone access when you join",
+      "Practice by video with another student for free. A disclosed AI co-pilot can keep time, give the interviewer private follow-up prompts, and provide feedback to both peers.",
+    detail: "Free peer interviews with AI-guided prompts and feedback",
     accent: "bg-sky-50 text-sky-600",
   },
   {
@@ -51,6 +51,42 @@ const coreFeatures = [
       "Choose an interviewer by role and seniority—such as SDE I, SDE II, or senior engineer—and book a time that works for you.",
     detail: "Select your interviewer and schedule a session",
     accent: "bg-emerald-50 text-emerald-600",
+  },
+  {
+    icon: <FaBrain size={22} />,
+    label: "AI PRACTICE",
+    title: "Multi-Panelist Bar Raiser Mode",
+    description:
+      "Practice a final-round panel with two AI personas: a friendly tech lead who guides architecture and a skeptical interviewer who probes scale, security, and edge cases using a distinct voice.",
+    detail: "Two interviewer perspectives and voices",
+    accent: "bg-fuchsia-50 text-fuchsia-600",
+  },
+  {
+    icon: <FaLaptop size={22} />,
+    label: "SYSTEM DESIGN",
+    title: "Interactive System Design Whiteboard",
+    description:
+      "Sketch systems such as a URL shortener or messaging app. With your approval, vision AI can review the diagram for bottlenecks, single points of failure, caching, and data partitioning.",
+    detail: "Draw architecture and request optional AI feedback",
+    accent: "bg-indigo-50 text-indigo-600",
+  },
+  {
+    icon: <FaCalendarAlt size={22} />,
+    label: "PLACEMENT PREP",
+    title: "7-Day Company Placement Sprint",
+    description:
+      "Build a daily 30-minute practice plan for an upcoming company interview, adapting the schedule to areas to improve from your interview history.",
+    detail: "Short daily tasks that unlock as you make progress",
+    accent: "bg-orange-50 text-orange-600",
+  },
+  {
+    icon: <FaCheckCircle size={22} />,
+    label: "OPTIONAL PRACTICE",
+    title: "Proctoring Simulation Mode",
+    description:
+      "Try an opt-in assessment simulation that flags tab changes and clipboard actions, with optional multiple-face checks and clear privacy controls.",
+    detail: "Practice mode only, with clear notice and consent",
+    accent: "bg-rose-50 text-rose-600",
   },
 ]
 
@@ -103,8 +139,8 @@ function UpcomingFeatures() {
                 The next step in interview practice.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300 md:text-lg">
-                More control over AI interviews, free practice with peers, and a
-                path to learn directly from experienced engineers.
+                Explore advanced AI interviews, system design practice, peer
+                learning, and adaptive preparation for your next opportunity.
               </p>
               <p className="mt-7 text-sm text-gray-400">
                 These platform features are planned but not available yet. No

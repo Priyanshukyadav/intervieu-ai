@@ -18,7 +18,31 @@ Express, MongoDB, Firebase Authentication, OpenRouter, Stripe, and Judge0.
 - Stripe Checkout for Starter and Pro credit plans.
 - An Upcoming page for planned platform features. These items are ideas, not
   features currently available.
-- Planned Debate Corner for guided peer-to-peer discussions.
+
+## Upcoming platform features
+
+These features are planned and are not available in the platform yet:
+
+- Choose between 5 and 25 questions for an AI interview.
+- Free peer-to-peer mock interviews with video calls.
+- Debate Corner for student debates on guided topics.
+- Pro subscription interviews with industry professionals, with interviewer
+  selection and scheduling.
+- A candidate learning roadmap with study plans and counselor support.
+- Structured peer feedback after practice sessions.
+- Smarter scheduling with time-zone coordination, reminders, and rescheduling.
+- **Multi-panelist “Bar Raiser” mode:** Two AI personas—a friendly tech lead
+  and a skeptical interviewer—use distinct voices to explore architecture,
+  scale, security, and edge cases.
+- **System Design whiteboard:** Draw systems such as a URL shortener and receive
+  visual AI feedback on bottlenecks, caching, and data-storage choices.
+- **Peer-to-peer Mock Arena with an AI referee:** Practice by video with another
+  student while an AI co-pilot provides interviewer prompts, timekeeping, and
+  post-session feedback for both participants.
+- **Company-specific Placement Sprint:** A 7-day adaptive practice plan based
+  on a target interview and areas to improve from past sessions.
+- **Optional proctoring simulation:** Practice with transparent, opt-in checks
+  for tab changes, clipboard actions, and multiple faces, with privacy controls.
 
 ## Requirements
 
