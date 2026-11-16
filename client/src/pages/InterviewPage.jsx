@@ -32,6 +32,10 @@ function InterviewPage() {
 
          {step === 2 && interviewData?.mode !== "DSA" && (
             <Step2Interview interviewData={interviewData}
+            onExit={() => {
+                setInterviewData(null)
+                setStep(1)
+            }}
             onFinish={(report)=>{setInterviewData(report);
                 setStep(3)
             }}

@@ -37,6 +37,9 @@ const interviewSchema = new mongoose.Schema({
     },
     questions:[questionsSchema],
 
+    completedAt: { type: Date, default: null },
+    endedAt: { type: Date, default: null },
+    durationSeconds: { type: Number, default: null },
     finalScore: { type: Number, default: 0 },
 
     status: {

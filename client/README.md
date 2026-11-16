@@ -10,13 +10,15 @@ Express, MongoDB, Firebase Authentication, OpenRouter, Stripe, and Judge0.
 - Optional resume analysis to tailor interview practice.
 - Voice-based interview flow with feedback and interview reports.
 - Optional local candidate video recording with in-browser preview and download.
-- Interview history and downloadable report support.
+- Interview history with date, time, duration, and deletion controls.
+- Interview duration is saved both when completed and when the candidate leaves early.
 - DSA coding round with a side-by-side problem and code editor.
 - C++, Python, Java, JavaScript, and Kotlin editor support.
 - Judge0-backed test execution for the current Two Sum challenge.
 - Stripe Checkout for Starter and Pro credit plans.
 - An Upcoming page for planned platform features. These items are ideas, not
   features currently available.
+- Planned Debate Corner for guided peer-to-peer discussions.
 
 ## Requirements
 

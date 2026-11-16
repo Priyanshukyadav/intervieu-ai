@@ -2,7 +2,7 @@ import React from 'react'
 import maleVideo from "../assets/videos/male-ai.mp4"
 import femaleVideo from "../assets/videos/female-ai.mp4"
 import Timer from './Timer'
-import { motion } from "motion/react"
+import { motion as Motion } from "motion/react"
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { useState } from 'react'
 import { useRef } from 'react'
@@ -11,7 +11,7 @@ import axios from "axios"
 import { ServerUrl } from '../App'
 import { BsArrowRight } from 'react-icons/bs'
 
-function Step2Interview({ interviewData, onFinish }) {
+function Step2Interview({ interviewData, onFinish, onExit }) {
   const { interviewId, questions, userName } = interviewData;
   const [isIntroPhase, setIsIntroPhase] = useState(true);
 
@@ -29,9 +29,12 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voiceGender, setVoiceGender] = useState("female");
   const [subtitle, setSubtitle] = useState("");
+  const [isExiting, setIsExiting] = useState(false);
+  const [exitError, setExitError] = useState("");
 
 
   const videoRef = useRef(null);
+  const hasEndedRef = useRef(false);
 
   const currentQuestion = questions[currentIndex];
 
@@ -80,6 +83,25 @@ function Step2Interview({ interviewData, onFinish }) {
   }, [])
 
   const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
+
+  useEffect(() => {
+    const saveDurationOnPageExit = () => {
+      if (hasEndedRef.current) return;
+
+      fetch(`${ServerUrl}/api/interview/abandon`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        keepalive: true,
+        body: JSON.stringify({ interviewId }),
+      }).catch((error) => {
+        console.error("Could not save the abandoned interview duration:", error);
+      });
+    };
+
+    window.addEventListener("pagehide", saveDurationOnPageExit);
+    return () => window.removeEventListener("pagehide", saveDurationOnPageExit);
+  }, [interviewId]);
 
 
   /* ---------------- SPEAK FUNCTION ---------------- */
@@ -226,7 +248,11 @@ function Step2Interview({ interviewData, onFinish }) {
     if (recognitionRef.current && !isAIPlaying) {
       try {
         recognitionRef.current.start();
-      } catch { }
+      } catch (error) {
+        if (error.name !== "InvalidStateError") {
+          console.error("Could not start speech recognition:", error);
+        }
+      }
     }
   };
 
@@ -294,11 +320,41 @@ setIsSubmitting(false)
       const result = await axios.post(ServerUrl+ "/api/interview/finish" , { interviewId} , {withCredentials:true})
 
       console.log(result.data)
+      hasEndedRef.current = true
       onFinish(result.data)
     } catch (error) {
       console.log(error)
     }
   }
+
+  const leaveInterview = async () => {
+    const confirmed = window.confirm(
+      "Leave this interview? Its duration will be saved, but the report will remain incomplete."
+    );
+    if (!confirmed || isExiting) return;
+
+    stopMic();
+    window.speechSynthesis.cancel();
+    setIsExiting(true);
+    setExitError("");
+    try {
+      await axios.post(
+        `${ServerUrl}/api/interview/abandon`,
+        { interviewId },
+        { withCredentials: true }
+      );
+      hasEndedRef.current = true;
+      onExit();
+    } catch (error) {
+      console.error("Could not save the interview duration:", error);
+      setExitError(
+        error.response?.data?.message ||
+          "Could not save the interview duration. Please try again."
+      );
+    } finally {
+      setIsExiting(false);
+    }
+  };
 
 
    useEffect(() => {
@@ -392,9 +448,24 @@ setIsSubmitting(false)
         {/* Text section */}
 
         <div className='flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative'>
-          <h2 className='text-xl sm:text-2xl font-bold text-emerald-600 mb-6'>
-            AI Smart Interview
-          </h2>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 className='text-xl sm:text-2xl font-bold text-emerald-600'>
+              AI Smart Interview
+            </h2>
+            <button
+              type="button"
+              onClick={leaveInterview}
+              disabled={isExiting}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isExiting ? "Saving duration…" : "Leave interview"}
+            </button>
+          </div>
+          {exitError && (
+            <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              {exitError}
+            </p>
+          )}
 
 
           {!isIntroPhase && (<div className='relative mb-6 bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm'>
@@ -413,24 +484,24 @@ setIsSubmitting(false)
 
 
          {!feedback ? ( <div className='flex items-center gap-4 mt-6'>
-            <motion.button
+            <Motion.button
               onClick={toggleMic}
               whileTap={{ scale: 0.9 }}
               className='w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg'>
               {isMicOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20}/>}
-            </motion.button>
+            </Motion.button>
 
-            <motion.button
+            <Motion.button
             onClick={submitAnswer}
             disabled={isSubmitting}
               whileTap={{ scale: 0.95 }}
               className='flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500'>
               {isSubmitting?"Submitting...":"Submit Answer"}
 
-            </motion.button>
+            </Motion.button>
 
           </div>):(
-            <motion.div 
+            <Motion.div
              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             className='mt-6 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm'>
@@ -443,7 +514,7 @@ setIsSubmitting(false)
                 Next Question <BsArrowRight size={18}/>
               </button>
 
-            </motion.div>
+            </Motion.div>
           )}
         </div>
       </div>

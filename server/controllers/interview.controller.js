@@ -1,4 +1,5 @@
 import fs from "fs"
+import mongoose from "mongoose";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { askAi } from "../services/openRouter.service.js";
 import User from "../models/user.model.js";
@@ -337,7 +338,14 @@ Answer: ${answer}
 export const finishInterview = async (req,res) => {
   try {
     const {interviewId} = req.body
-    const interview = await Interview.findById(interviewId)
+    if (!mongoose.isValidObjectId(interviewId)) {
+      return res.status(400).json({ message: "Invalid interview ID." });
+    }
+
+    const interview = await Interview.findOne({
+      _id: interviewId,
+      userId: req.userId,
+    })
     if(!interview){
       return res.status(400).json({message:"failed to find Interview"})
     }
@@ -374,6 +382,18 @@ export const finishInterview = async (req,res) => {
 
     interview.finalScore = finalScore;
     interview.status = "completed";
+    if (!interview.endedAt) {
+      interview.endedAt = new Date();
+    }
+    if (!interview.completedAt) {
+      interview.completedAt = interview.endedAt;
+    }
+    if (!Number.isFinite(interview.durationSeconds)) {
+      interview.durationSeconds = Math.max(
+        0,
+        Math.floor((interview.endedAt.getTime() - interview.createdAt.getTime()) / 1000)
+      );
+    }
 
     await interview.save();
 
@@ -396,12 +416,46 @@ export const finishInterview = async (req,res) => {
   }
 }
 
+export const abandonInterview = async (req, res) => {
+  try {
+    const { interviewId } = req.body;
+    if (!mongoose.isValidObjectId(interviewId)) {
+      return res.status(400).json({ message: "Invalid interview ID." });
+    }
+
+    const interview = await Interview.findOne({
+      _id: interviewId,
+      userId: req.userId,
+    });
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found." });
+    }
+
+    if (!interview.endedAt) {
+      interview.endedAt = new Date();
+      interview.durationSeconds = Math.max(
+        0,
+        Math.floor((interview.endedAt.getTime() - interview.createdAt.getTime()) / 1000)
+      );
+      await interview.save();
+    }
+
+    return res.status(200).json({
+      durationSeconds: interview.durationSeconds,
+      endedAt: interview.endedAt,
+    });
+  } catch (error) {
+    console.error("Failed to save interview exit time:", error);
+    return res.status(500).json({ message: "Failed to save interview duration." });
+  }
+};
+
 
 export const getMyInterviews = async (req,res) => {
   try {
     const interviews = await Interview.find({userId:req.userId})
     .sort({ createdAt: -1 })
-    .select("role experience mode finalScore status createdAt");
+    .select("role experience mode finalScore status createdAt updatedAt completedAt endedAt durationSeconds");
 
     return res.status(200).json(interviews)
 
@@ -409,6 +463,28 @@ export const getMyInterviews = async (req,res) => {
      return res.status(500).json({message:`failed to find currentUser Interview ${error}`})
   }
 }
+
+export const deleteMyInterview = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid interview ID." });
+    }
+
+    const interview = await Interview.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found." });
+    }
+
+    return res.status(200).json({ message: "Interview deleted." });
+  } catch (error) {
+    console.error("Failed to delete interview:", error);
+    return res.status(500).json({ message: "Failed to delete interview." });
+  }
+};
 
 export const getInterviewReport = async (req,res) => {
   try {

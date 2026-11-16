@@ -35,6 +35,15 @@ const coreFeatures = [
     accent: "bg-sky-50 text-sky-600",
   },
   {
+    icon: <FaComments size={22} />,
+    label: "FREE COMMUNITY",
+    title: "Debate Corner",
+    description:
+      "Join other students for structured debates on guided topics and practice explaining your ideas clearly and respectfully.",
+    detail: "Debate with peers around guided topics",
+    accent: "bg-amber-50 text-amber-600",
+  },
+  {
     icon: <FaUserTie size={22} />,
     label: "PRO SUBSCRIPTION",
     title: "Interview with industry professionals",
@@ -114,7 +123,7 @@ function UpcomingFeatures() {
               </h2>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
               {coreFeatures.map((feature) => (
                 <article
                   key={feature.title}
