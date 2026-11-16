@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FaDownload, FaVideo } from 'react-icons/fa'
+import {
+  FaArrowsAlt,
+  FaCompress,
+  FaDownload,
+  FaExpand,
+  FaVideo,
+} from 'react-icons/fa'
 
 const preferredMimeTypes = [
   'video/webm;codecs=vp9,opus',
@@ -26,8 +32,13 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
   const [recordingBlob, setRecordingBlob] = useState(null)
   const [recordingUrl, setRecordingUrl] = useState('')
   const [error, setError] = useState('')
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [position, setPosition] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const videoRef = useRef(null)
+  const panelRef = useRef(null)
+  const dragRef = useRef(null)
   const recorderRef = useRef(null)
   const streamRef = useRef(null)
   const chunksRef = useRef([])
@@ -38,6 +49,38 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
       recorder.stop()
     }
   }, [])
+
+  const handleDragStart = (event) => {
+    if (event.target.closest('button') || event.button !== 0) return
+    event.preventDefault()
+
+    const panel = panelRef.current
+    if (!panel) return
+    const bounds = panel.getBoundingClientRect()
+    dragRef.current = {
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top,
+    }
+    setPosition({ x: bounds.left, y: bounds.top })
+    setIsDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handleDragMove = (event) => {
+    if (!dragRef.current || !panelRef.current) return
+
+    const panel = panelRef.current
+    const maxX = Math.max(8, window.innerWidth - panel.offsetWidth - 8)
+    const maxY = Math.max(8, window.innerHeight - panel.offsetHeight - 8)
+    const x = Math.min(maxX, Math.max(8, event.clientX - dragRef.current.offsetX))
+    const y = Math.min(maxY, Math.max(8, event.clientY - dragRef.current.offsetY))
+    setPosition({ x, y })
+  }
+
+  const handleDragEnd = () => {
+    dragRef.current = null
+    setIsDragging(false)
+  }
 
   useEffect(() => {
     if (isInterviewFinished) {
@@ -134,6 +177,7 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
       recorder.start(1000)
       setMediaStream(stream)
       setIsRecording(true)
+      setIsExpanded(false)
     } catch (recordingError) {
       stream?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
@@ -153,28 +197,66 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
   const extension = recordingBlob?.type.includes('mp4') ? 'mp4' : 'webm'
 
   return (
-    <section className="mx-auto my-5 w-full max-w-6xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-slate-900">
-            <FaVideo className="text-emerald-600" />
-            <h2 className="text-lg font-semibold">Your interview recording</h2>
-          </div>
-          <p className="mt-1 text-sm text-slate-600">
-            Optional. Record yourself and download the video to review later.
-          </p>
+    <section
+      ref={panelRef}
+      className={`fixed z-50 max-h-[85vh] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-2xl transition-[width] sm:p-4 ${
+        position ? '' : 'bottom-4 right-4'
+      } ${isDragging ? 'cursor-grabbing' : ''} ${
+        isExpanded ? '' : 'w-48 sm:w-52'
+      }`}
+      style={{
+        ...(position
+          ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' }
+          : {}),
+        ...(isExpanded ? { width: 'min(92vw, 560px)' } : {}),
+      }}
+    >
+      <div
+        onPointerDown={handleDragStart}
+        onPointerMove={handleDragMove}
+        onPointerUp={handleDragEnd}
+        onPointerCancel={handleDragEnd}
+        className={`flex touch-none select-none items-center justify-between gap-2 ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        title="Hold and drag to move the video"
+      >
+        <div className="flex min-w-0 items-center gap-2 text-slate-900">
+          <FaArrowsAlt className="shrink-0 text-slate-400" size={12} />
+          <FaVideo className="shrink-0 text-emerald-600" />
+          <h2 className="truncate text-sm font-semibold">
+            {isExpanded ? 'Your interview recording' : 'Your video'}
+          </h2>
+          {isRecording && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
+              REC
+            </span>
+          )}
         </div>
-        {isRecording && (
-          <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />
-            Recording
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((current) => !current)}
+            aria-label={isExpanded ? 'Shrink recording panel' : 'Expand recording panel'}
+            title={isExpanded ? 'Shrink' : 'Expand'}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            {isExpanded ? <FaCompress size={13} /> : <FaExpand size={13} />}
+          </button>
+        </div>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(250px,0.8fr)]">
+      {isExpanded && (
+        <p className="mt-1 text-xs text-slate-600">
+          Camera video and microphone audio, including your spoken answers, are
+          recorded together. Nothing is uploaded.
+        </p>
+      )}
+
+      <div className={`mt-3 grid gap-3 ${isExpanded ? 'md:grid-cols-[minmax(0,1.2fr)_minmax(190px,0.8fr)]' : ''}`}>
         {(mediaStream || recordingUrl) && (
-          <div className="overflow-hidden rounded-xl bg-slate-950">
+          <div className="overflow-hidden rounded-lg bg-slate-950">
             <video
               ref={videoRef}
               src={recordingUrl || undefined}
@@ -187,30 +269,31 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
           </div>
         )}
 
-        <div className="flex flex-col justify-center">
-          {!recordingBlob && !isInterviewFinished && (
+        <div className="flex min-w-0 flex-col justify-center">
+          {!recordingBlob && !isInterviewFinished && isExpanded && (
             <>
-              <label className="flex cursor-pointer items-start gap-3 text-sm leading-5 text-slate-700">
+              <label className="flex cursor-pointer items-start gap-2 text-xs leading-4 text-slate-700">
                 <input
                   type="checkbox"
                   checked={consentGiven}
                   onChange={(event) => setConsentGiven(event.target.checked)}
                   disabled={isRecording || isStarting}
-                  className="mt-1 h-4 w-4 accent-emerald-600"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
                 />
                 <span>
-                  I agree to record my camera and microphone. The video stays in
-                  this browser and is not uploaded to InterviewIQ.AI.
+                  I agree to record my camera and microphone, including my
+                  spoken answers. The recording stays in this browser and is
+                  not uploaded to InterviewIQ.AI.
                 </span>
               </label>
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {!isRecording ? (
                   <button
                     type="button"
                     onClick={handleStartRecording}
                     disabled={!consentGiven || isStarting}
-                    className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isStarting ? 'Starting camera…' : 'Start recording'}
                   </button>
@@ -218,34 +301,54 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
                   <button
                     type="button"
                     onClick={stopRecording}
-                    className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                    className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
                   >
-                    Stop and save recording
+                    Stop and save
                   </button>
                 )}
               </div>
             </>
           )}
 
+          {!recordingBlob && !isInterviewFinished && !isExpanded && !isRecording && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="w-full rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+            >
+              Set up recording
+            </button>
+          )}
+
+          {isRecording && !isExpanded && (
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="w-full rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
+            >
+              Stop and save
+            </button>
+          )}
+
           {recordingBlob && (
             <>
-              <p className="text-sm font-medium text-emerald-700">
+              <p className="text-xs font-medium text-emerald-700">
                 Recording ready to review ({(recordingBlob.size / 1024 / 1024).toFixed(1)} MB).
               </p>
-              <div className="mt-3 flex flex-wrap gap-3">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <a
                   href={recordingUrl}
                   download={`interviewiq-candidate-recording.${extension}`}
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
                 >
                   <FaDownload />
-                  Download video
+                  {isExpanded ? 'Download video' : 'Download'}
                 </a>
-                {!isInterviewFinished && (
+                {!isInterviewFinished && isExpanded && (
                   <button
                     type="button"
                     onClick={handleRecordAgain}
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
                     Record again
                   </button>
@@ -255,20 +358,22 @@ function CandidateVideoRecorder({ isInterviewFinished }) {
           )}
 
           {isInterviewFinished && !recordingBlob && !isRecording && (
-            <p className="text-sm text-slate-600">
+            <p className="text-xs text-slate-600">
               No recording was saved for this interview.
             </p>
           )}
         </div>
       </div>
 
-      <p className="mt-4 text-xs leading-5 text-slate-500">
-        Recording is kept only in this browser session. Download it before
-        leaving or refreshing the page. Camera and microphone access requires
-        your permission and a secure connection (HTTPS).
-      </p>
+      {isExpanded && (
+        <p className="mt-3 text-xs leading-5 text-slate-500">
+          Recording is kept only in this browser session. Download it before
+          leaving or refreshing the page. Camera and microphone access requires
+          your permission and a secure connection (HTTPS).
+        </p>
+      )}
       {error && (
-        <p role="alert" className="mt-3 text-sm text-red-700">
+        <p role="alert" className="mt-2 text-xs text-red-700">
           {error}
         </p>
       )}
