@@ -1,81 +1,81 @@
 # InterviewIQ.AI
 
-InterviewIQ.AI is a mock interview preparation platform built with React, Vite,
-Express, MongoDB, Firebase Authentication, OpenRouter, Stripe, and Judge0.
+InterviewIQ.AI is a full-stack mock interview platform for practicing technical
+and HR interviews. It combines AI-generated questions, resume-aware interview
+setup, voice-based interview flow, interview reports, Stripe credit plans, and a
+Judge0-powered DSA coding round.
+
+## Repository structure
+
+```text
+.
+├── client/        # React + Vite frontend
+├── server/        # Express + MongoDB API
+└── render.yaml    # Render Blueprint for the API service
+```
 
 ## Features
 
-- Google sign-in with Firebase Authentication.
-- AI-generated technical and HR interview questions.
-- Optional resume analysis to tailor interview practice.
-- Voice-based interview flow with feedback and interview reports.
-- Optional local candidate video recording with in-browser preview and download.
-- Interview history with date, time, duration, and deletion controls.
-- Interview duration is saved both when completed and when the candidate leaves early.
-- DSA coding round with a side-by-side problem and code editor.
-- C++, Python, Java, JavaScript, and Kotlin editor support.
-- Judge0-backed test execution for the current Two Sum challenge.
-- Stripe Checkout for Starter and Pro credit plans.
-- An Upcoming page for planned platform features. These items are ideas, not
-  features currently available.
+- **Google sign-in** with Firebase Authentication.
+- **AI interview practice** for technical and HR rounds, with optional resume
+  analysis to tailor questions.
+- **Voice interview flow** with answer submission, feedback, and generated
+  interview reports.
+- **Interview history** with date, time, duration, report access, and deletion
+  controls. Duration is saved when an interview is completed or abandoned.
+- **Optional local candidate video recording** with in-browser preview and
+  download. Recordings stay in browser memory for the current session and are
+  not uploaded.
+- **DSA coding round** with a side-by-side problem and CodeMirror editor.
+  Supported languages: C++, Python, Java, JavaScript, and Kotlin.
+- **Judge0 test execution** for the current Two Sum challenge through an
+  authenticated, rate-limited server endpoint.
+- **Stripe Checkout credit plans**: Starter (INR 100 / 150 credits) and Pro
+  (INR 500 / 650 credits).
+- **Upcoming features page** for planned ideas that are not yet available in the
+  product.
 
-## Upcoming platform features
+## Tech stack
 
-These features are planned and are not available in the platform yet:
-
-- Choose between 5 and 25 questions for an AI interview.
-- Free peer-to-peer mock interviews with video calls.
-- Debate Corner for student debates on guided topics.
-- Pro subscription interviews with industry professionals, with interviewer
-  selection and scheduling.
-- A candidate learning roadmap with study plans and counselor support.
-- Structured peer feedback after practice sessions.
-- Smarter scheduling with time-zone coordination, reminders, and rescheduling.
-- **Multi-panelist “Bar Raiser” mode:** Two AI personas—a friendly tech lead
-  and a skeptical interviewer—use distinct voices to explore architecture,
-  scale, security, and edge cases.
-- **System Design whiteboard:** Draw systems such as a URL shortener and receive
-  visual AI feedback on bottlenecks, caching, and data-storage choices.
-- **Peer-to-peer Mock Arena with an AI referee:** Practice by video with another
-  student while an AI co-pilot provides interviewer prompts, timekeeping, and
-  post-session feedback for both participants.
-- **Company-specific Placement Sprint:** A 7-day adaptive practice plan based
-  on a target interview and areas to improve from past sessions.
-- **Optional proctoring simulation:** Practice with transparent, opt-in checks
-  for tab changes, clipboard actions, and multiple faces, with privacy controls.
+| Area | Technologies |
+| --- | --- |
+| Frontend | React 19, Vite, Redux Toolkit, React Router, Tailwind CSS, Firebase Auth |
+| Backend | Node.js, Express 5, MongoDB/Mongoose, JWT cookies, Multer, PDF parsing |
+| AI / Integrations | OpenRouter, Judge0 CE via RapidAPI, Stripe Checkout |
 
 ## Requirements
 
-- Node.js 22.13 or newer.
-- npm.
-- A MongoDB database.
-- Firebase project with Google Authentication enabled.
-- An OpenRouter API key for AI interview features.
-- A Stripe account and test secret key for test payments.
-- A Judge0 CE RapidAPI key for running DSA code.
+- Node.js 22.13 or newer
+- npm
+- MongoDB database
+- Firebase project with Google Authentication enabled
+- OpenRouter API key
+- Stripe test secret key
+- Judge0 CE RapidAPI key
 
 ## Environment setup
 
-Copy the example files and replace each placeholder with your own configuration.
-Do not commit `.env` files or share server secrets.
+Copy the example files and replace placeholders with your own values. Do not
+commit `.env` files or share server secrets.
 
-### Client
+### Client (`client/.env`)
 
-Create `client/.env` from `client/.env.example`:
+Create `client/.env` from [`client/.env.example`](./.env.example):
 
 ```env
 VITE_API_URL=http://localhost:8000
 VITE_FIREBASE_APIKEY=your_firebase_web_api_key
 ```
 
-The other Firebase settings are in `client/src/utils/firebase.js`. They must
-belong to the same Firebase Web app as the API key. Enable Google under Firebase
-Authentication sign-in providers and add your local/deployed host to Authorized
+The remaining Firebase settings are configured in
+[`client/src/utils/firebase.js`](./src/utils/firebase.js). They must belong to
+the same Firebase Web app as `VITE_FIREBASE_APIKEY`. Enable Google in Firebase
+Authentication sign-in providers and add local/deployed hosts to Authorized
 domains.
 
-### Server
+### Server (`server/.env`)
 
-Create `server/.env` from `server/.env.example` and fill in:
+Create `server/.env` from [`server/.env.example`](../server/.env.example):
 
 ```env
 PORT=8000
@@ -87,71 +87,15 @@ CLIENT_URL=http://localhost:5173
 JUDGE0_API_KEY=replace_with_rapidapi_key
 ```
 
-`CLIENT_URL` may contain a comma-separated list of allowed client origins. The
-client calls `VITE_API_URL`; set it to the API's base URL without a trailing
-slash. Render supplies `PORT` automatically in production.
+Notes:
 
-## Deploy
-
-### Render API
-
-1. Create a Render Blueprint from this repository using the root
-   [`render.yaml`](../render.yaml). It creates the web service with `server/`
-   as its root directory, `npm ci` as its build command, and `npm start` as its
-   start command.
-2. Set the prompted secret/environment values in Render:
-   `MONGODB_URL`, `JWT_SECRET_KEY`, `OPENROUTER_API_KEY`,
-   `STRIPE_SECRET_KEY`, `JUDGE0_API_KEY`, and `CLIENT_URL`.
-   Set `CLIENT_URL` to the Vercel site's exact origin, such as
-   `https://your-app.vercel.app` (no path or trailing slash). Include any
-   additional Vercel preview origins as comma-separated values if those
-   previews need API access.
-3. Wait for `/api/health` to pass. The server connects to MongoDB before it
-   starts listening, so a missing or invalid database URL fails the deployment
-   instead of leaving an apparently healthy but unusable service.
-
-### Vercel client
-
-1. Import the repository in Vercel and set the project **Root Directory** to
-   `client`. The included [`vercel.json`](./vercel.json) configures the Vite
-   build output and SPA route fallback.
-2. Add these Vercel environment variables for Production (and Preview if used):
-   - `VITE_API_URL`: the Render service origin, such as
-     `https://your-api.onrender.com` (no trailing slash).
-   - `VITE_FIREBASE_APIKEY`: the Firebase Web API key.
-3. Deploy, then add the Vercel domain to Firebase Authentication's authorized
-   domains. Configure Render's `CLIENT_URL` with that same origin.
-
-The API uses credentialed CORS and secure cross-site cookies in production.
-For more reliable browser cookie behavior, use custom domains for both
-services under the same registrable domain (for example, `app.example.com`
-and `api.example.com`).
-
-Candidate video recording uses the browser's camera and microphone APIs. It
-does not upload videos or require a recording API key. Recordings remain in
-browser memory for the current session, so candidates should download them
-before leaving or refreshing the page. Camera and microphone access requires
-permission and HTTPS in production.
-
-#### DSA code runner
-
-Subscribe to Judge0 CE through RapidAPI and copy the RapidAPI key into
-`JUDGE0_API_KEY`. The key stays on the server. Candidate source code is sent to
-the hosted Judge0 sandbox when Run tests is clicked; do not put passwords,
-tokens, or other secrets in submitted code. The run endpoint is authenticated,
-limits code size and execution resources, and rate-limits submissions.
-
-#### Stripe test payments
-
-Use a Stripe test secret key (`sk_test_...`) in `STRIPE_SECRET_KEY`. Stripe
-Checkout is created by the server, so no Stripe key is needed in the client
-environment. The Starter plan is INR 100 for 150 credits and the Pro plan is
-INR 500 for 650 credits. The current flow verifies payment after the user
-returns from Checkout; configure webhook fulfillment before production use.
+- `CLIENT_URL` accepts a comma-separated list of allowed origins.
+- `VITE_API_URL` should be the API base URL with no trailing slash.
+- Render provides `PORT` automatically in production.
 
 ## Run locally
 
-Install dependencies and run the server and client in separate terminals:
+Run the API and client in separate terminals from the repository root.
 
 ```powershell
 cd server
@@ -165,33 +109,106 @@ npm install
 npm run dev
 ```
 
-Vite serves the client at `http://localhost:5173`; the API uses
-`http://localhost:8000` by default when configured as above.
+Default local URLs:
 
-## Use the DSA coding round
+- Client: `http://localhost:5173`
+- API: `http://localhost:8000`
+- Health check: `http://localhost:8000/api/health`
+
+## Deployment
+
+### Render API
+
+1. Create a Render Blueprint from this repository using
+   [`render.yaml`](../render.yaml). It configures `server/` as the root
+   directory, runs `npm ci`, starts with `npm start`, and checks `/api/health`.
+2. Set required Render environment variables: `MONGODB_URL`, `JWT_SECRET_KEY`,
+   `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`, `JUDGE0_API_KEY`, and
+   `CLIENT_URL`.
+3. Set `CLIENT_URL` to the exact Vercel origin, e.g.
+   `https://your-app.vercel.app` (no trailing slash). Add preview origins as
+   comma-separated values only if those previews need API access.
+
+The server connects to MongoDB before listening, so invalid database
+configuration fails deployment instead of serving an unusable API.
+
+### Vercel client
+
+1. Import the repository in Vercel and set **Root Directory** to `client`. The
+   included [`vercel.json`](./vercel.json) configures the Vite build and SPA
+   route fallback.
+2. Add Vercel environment variables:
+   - `VITE_API_URL`: Render API origin, e.g. `https://your-api.onrender.com`
+   - `VITE_FIREBASE_APIKEY`: Firebase Web API key
+3. Deploy, then add the Vercel domain to Firebase Authentication authorized
+   domains and include that same origin in Render `CLIENT_URL`.
+
+The API uses credentialed CORS and secure cross-site cookies in production. For
+more reliable browser cookie behavior, prefer custom domains under the same
+registrable domain (for example, `app.example.com` and `api.example.com`).
+
+## DSA coding round
 
 1. Sign in and open **Start Interview**.
-2. Select **DSA Coding Round** and start.
+2. Select **DSA Coding Round**.
 3. Choose C++, Python, Java, JavaScript, or Kotlin.
 4. Write a solution for the Two Sum problem and click **Run tests**.
 
-The test inputs are kept on the server. The current DSA flow contains one
-starter problem and does not yet save coding-round reports to interview history.
+Candidate code is sent to the hosted Judge0 sandbox when tests are run. Do not
+include passwords, tokens, or other secrets in submitted code. The current DSA
+flow includes one starter problem and does not yet save coding-round reports to
+interview history.
+
+## Stripe test payments
+
+Use a Stripe test secret key (`sk_test_...`) in `STRIPE_SECRET_KEY`. Stripe
+Checkout is created on the server; no Stripe secret is exposed to the client.
+The current flow verifies payment after returning from Checkout; configure
+webhook fulfillment before production use.
 
 ## Main routes
 
-- `/` - Home
-- `/interview` - Interview setup and interview flow
-- `/history` - Past interviews
-- `/pricing` - Credit plans and Stripe Checkout
-- `/upcoming` - Planned platform features
-- `/report/:id` - Interview report
+| Route | Purpose |
+| --- | --- |
+| `/` | Home |
+| `/interview` | Interview setup and interview flow |
+| `/history` | Past interviews |
+| `/pricing` | Credit plans and Stripe Checkout |
+| `/upcoming` | Planned platform features |
+| `/report/:id` | Interview report |
+
+## API overview
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/auth/google` | Google/Firebase authentication |
+| `GET` | `/api/auth/logout` | Log out current user |
+| `GET` | `/api/user/current-user` | Fetch authenticated user |
+| `POST` | `/api/interview/resume` | Analyze uploaded resume |
+| `POST` | `/api/interview/generate-questions` | Generate interview questions |
+| `POST` | `/api/interview/submit-answer` | Submit interview answer |
+| `POST` | `/api/interview/finish` | Finish interview and generate report |
+| `POST` | `/api/interview/abandon` | Mark interview as abandoned |
+| `GET` | `/api/interview/get-interview` | List interview history |
+| `DELETE` | `/api/interview/:id` | Delete interview |
+| `GET` | `/api/interview/report/:id` | Fetch interview report |
+| `POST` | `/api/payment/order` | Create Stripe Checkout order |
+| `POST` | `/api/payment/verify` | Verify Stripe payment |
+| `POST` | `/api/code/run` | Run DSA code against Judge0 tests |
 
 ## Useful commands
 
-Run these from `client/`:
+From `client/`:
 
 ```powershell
 npm run build
 npm run lint
+```
+
+From `server/`:
+
+```powershell
+npm run dev
+npm start
 ```
